@@ -8,38 +8,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
 
 <style>
 body { margin:0; font-family:Arial; background:#f2f2f2; }
 
-/* LOGIN */
-#auth {
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-}
-
-#auth input {
-  margin:5px;
-  padding:10px;
-  width:250px;
-}
-
-#auth button {
-  margin:5px;
-  padding:10px;
-  width:260px;
-  background:black;
-  color:white;
-  border:none;
-}
-
-/* APP */
-#app { display:none; }
-
-/* HEADER */
 header {
   background:#111;
   color:white;
@@ -48,7 +21,6 @@ header {
   justify-content:space-between;
 }
 
-/* POST */
 .post {
   background:white;
   margin:10px;
@@ -70,79 +42,74 @@ header {
   justify-content:space-around;
   padding:10px;
 }
+
+/* SETTINGS MODAL */
+#settings {
+  position:fixed;
+  top:0;
+  right:0;
+  width:100%;
+  height:100%;
+  background:white;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+
+input {
+  margin:5px;
+  padding:10px;
+}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="auth">
-  <h1>MatchFit</h1>
+<header>
+  <h2>MatchFit</h2>
+  <button onclick="openSettings()">⚙️</button>
+</header>
+
+<!-- FEED -->
+<div id="feed"></div>
+
+<!-- NAV -->
+<div class="nav">
+  <button onclick="upload()">➕</button>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings">
+  <h2>Connexion</h2>
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Mot de passe">
   <button onclick="signup()">Créer compte</button>
   <button onclick="login()">Connexion</button>
-</div>
-
-<!-- APP -->
-<div id="app">
-
-<header>
-  <h2>MatchFit</h2>
-  <button onclick="logout()">⚙️</button>
-</header>
-
-<div id="feed"></div>
-
-</div>
-
-<div class="nav">
-  <button>🏠</button>
+  <button onclick="closeSettings()">Fermer</button>
 </div>
 
 <script>
 
-// 🔥 CONFIG FIREBASE
+// FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_ID"
+  projectId: "YOUR_ID",
+  storageBucket: "YOUR_BUCKET"
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
 const db = firebase.firestore();
-
-// AUTH
-function signup(){
-  auth.createUserWithEmailAndPassword(email.value, password.value);
-}
-
-function login(){
-  auth.signInWithEmailAndPassword(email.value, password.value);
-}
-
-function logout(){
-  auth.signOut();
-}
-
-// STATE
-auth.onAuthStateChanged(user=>{
-  if(user){
-    document.getElementById("auth").style.display="none";
-    document.getElementById("app").style.display="block";
-    loadFeed();
-  } else {
-    document.getElementById("auth").style.display="flex";
-    document.getElementById("app").style.display="none";
-  }
-});
+const storage = firebase.storage();
 
 // FEED
 function loadFeed(){
   db.collection("posts").onSnapshot(snap=>{
-    
-    // 🔥 SI VIDE → FAKE POSTS
+
+    // SI VIDE → FAKE
     if(snap.empty){
       feed.innerHTML = `
         <div class="post">
@@ -157,11 +124,9 @@ function loadFeed(){
       return;
     }
 
-    // 🔥 POSTS RÉELS
     feed.innerHTML = "";
     snap.forEach(doc=>{
       let p = doc.data();
-
       feed.innerHTML += `
         <div class="post">
           <img src="${p.img}">
@@ -171,6 +136,58 @@ function loadFeed(){
     });
   });
 }
+
+// UPLOAD
+function upload(){
+  if(!auth.currentUser){
+    alert("Connecte-toi dans les paramètres");
+    openSettings();
+    return;
+  }
+
+  const input = document.createElement("input");
+  input.type = "file";
+
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const ref = storage.ref("posts/" + Date.now());
+
+    ref.put(file).then(snap=>{
+      snap.ref.getDownloadURL().then(url=>{
+        db.collection("posts").add({
+          user: auth.currentUser.uid,
+          email: auth.currentUser.email,
+          img: url,
+          createdAt: Date.now()
+        });
+      });
+    });
+  };
+
+  input.click();
+}
+
+// SETTINGS
+function openSettings(){
+  settings.style.display = "flex";
+}
+
+function closeSettings(){
+  settings.style.display = "none";
+}
+
+// AUTH
+function signup(){
+  auth.createUserWithEmailAndPassword(email.value, password.value);
+}
+
+function login(){
+  auth.signInWithEmailAndPassword(email.value, password.value)
+  .then(()=> closeSettings());
+}
+
+// INIT
+loadFeed();
 
 </script>
 
