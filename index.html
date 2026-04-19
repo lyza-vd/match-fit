@@ -40,11 +40,9 @@ img { width:100%; border-radius:10px; }
   padding:10px;
 }
 
-/* SETTINGS */
 #settings {
   position:fixed;
   top:0;
-  right:0;
   width:100%;
   height:100%;
   background:white;
@@ -69,7 +67,7 @@ input { padding:10px; margin:5px; }
 <div id="feed"></div>
 
 <!-- SWIPE -->
-<div id="discover" style="display:none">
+<div id="discover" style="display:none; text-align:center;">
   <div id="card" class="card"></div>
   <button onclick="likeUser()">❤️</button>
   <button onclick="skipUser()">❌</button>
@@ -84,7 +82,7 @@ input { padding:10px; margin:5px; }
 
 <!-- PROFILE -->
 <div id="profile" style="display:none">
-  <h3>Mon Profil</h3>
+  <h3>Mon profil</h3>
   <div id="myPosts"></div>
 </div>
 
@@ -123,9 +121,11 @@ const db = firebase.firestore();
 // ================= FEED =================
 function loadFeed(){
   db.collection("posts").onSnapshot(snap=>{
+
     if(snap.empty){
       feed.innerHTML = `
-        <div class="post"><img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74"><p>Sophie</p></div>
+        <div class="post"><img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74"><p>Sophie - Running</p></div>
+        <div class="post"><img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438"><p>Alex - Musculation</p></div>
       `;
       return;
     }
@@ -138,36 +138,47 @@ function loadFeed(){
   });
 }
 
-// ================= USERS =================
+// ================= SWIPE =================
 let users = [];
 let index = 0;
 
 function loadUsers(){
   db.collection("users").get().then(snap=>{
     users=[];
+
     snap.forEach(doc=>{
       if(doc.id !== auth.currentUser?.uid){
         users.push({id:doc.id, ...doc.data()});
       }
     });
+
+    if(users.length === 0){
+      users = [
+        {id:"1", name:"Sophie", sport:"Running", photo:"https://images.unsplash.com/photo-1554284126-aa88f22d8b74"},
+        {id:"2", name:"Alex", sport:"Muscu", photo:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438"},
+        {id:"3", name:"Laura", sport:"Yoga", photo:"https://images.unsplash.com/photo-1506126613408-eca07ce68773"}
+      ];
+    }
+
     showUser();
   });
 }
 
 function showUser(){
-  if(users.length === 0) return;
   let u = users[index];
-
   card.innerHTML = `
-    <img src="${u.photo || 'https://via.placeholder.com/300'}">
-    <h2>${u.name || 'Sportif'}</h2>
-    <p>${u.sport || 'Sport'}</p>
+    <img src="${u.photo}">
+    <h2>${u.name}</h2>
+    <p>${u.sport}</p>
   `;
 }
 
-// ================= MATCH =================
 function likeUser(){
-  if(!auth.currentUser) return alert("Connecte-toi");
+  if(!auth.currentUser){
+    alert("Connecte-toi");
+    openSettings();
+    return;
+  }
 
   let target = users[index];
 
@@ -176,7 +187,6 @@ function likeUser(){
     to: target.id
   });
 
-  // check match
   db.collection("likes")
   .where("from","==",target.id)
   .where("to","==",auth.currentUser.uid)
@@ -197,7 +207,7 @@ function skipUser(){ nextUser(); }
 
 function nextUser(){
   index++;
-  if(index >= users.length) index=0;
+  if(index >= users.length) index = 0;
   showUser();
 }
 
@@ -212,6 +222,15 @@ function sendMsg(){
 }
 
 db.collection("messages").onSnapshot(snap=>{
+
+  if(snap.empty){
+    chat.innerHTML = `
+      <p><b>Sophie :</b> Salut 👋</p>
+      <p><b>Toi :</b> Hello !</p>
+    `;
+    return;
+  }
+
   chat.innerHTML="";
   snap.forEach(doc=>{
     let m = doc.data();
@@ -221,11 +240,31 @@ db.collection("messages").onSnapshot(snap=>{
 
 // ================= PROFILE =================
 function loadProfile(){
-  if(!auth.currentUser) return;
+
+  if(!auth.currentUser){
+    myPosts.innerHTML = `
+      <div class="post">
+        <img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74">
+        <p>Exemple profil</p>
+      </div>
+    `;
+    return;
+  }
 
   db.collection("posts")
   .where("user","==",auth.currentUser.uid)
   .onSnapshot(snap=>{
+
+    if(snap.empty){
+      myPosts.innerHTML = `
+        <div class="post">
+          <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438">
+          <p>Ton futur post</p>
+        </div>
+      `;
+      return;
+    }
+
     myPosts.innerHTML="";
     snap.forEach(doc=>{
       let p = doc.data();
@@ -239,8 +278,8 @@ function signup(){
   auth.createUserWithEmailAndPassword(email.value,password.value)
   .then(res=>{
     db.collection("users").doc(res.user.uid).set({
-      name:"Nouveau",
-      sport:"Sport"
+      name:"Sportif",
+      sport:"Fitness"
     });
   });
 }
