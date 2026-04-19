@@ -5,95 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MatchFit</title>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
+
 <style>
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:#f2f2f2;
-}
+body { margin:0; font-family:Arial; background:#f2f2f2; }
 
-/* HEADER */
 header {
-  background:#111;
-  color:white;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+  background:#111; color:white;
+  display:flex; justify-content:space-between;
   padding:15px;
-}
-
-header h1 {
-  margin:0;
-  font-size:24px;
-}
-
-header span {
-  font-size:20px;
-}
-
-/* STORIES */
-.stories {
-  display:flex;
-  overflow-x:auto;
-  padding:10px;
-  background:white;
-}
-
-.story {
-  text-align:center;
-  margin-right:10px;
-}
-
-.story img {
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  border:3px solid orange;
-}
-
-/* FEED */
-.feed {
-  padding-bottom:80px;
 }
 
 .post {
   background:white;
   margin:10px;
+  padding:10px;
   border-radius:10px;
-  overflow:hidden;
 }
 
-.post-header {
-  display:flex;
-  justify-content:space-between;
-  padding:10px;
-  align-items:center;
-}
+img { width:100%; border-radius:10px; }
 
-.user {
-  display:flex;
-  align-items:center;
-}
-
-.user img {
-  width:40px;
-  height:40px;
-  border-radius:50%;
-  margin-right:10px;
-}
-
-.post img {
-  width:100%;
-}
-
-.actions {
-  display:flex;
-  gap:15px;
-  padding:10px;
-  font-size:20px;
-}
-
-/* NAVBAR */
 .nav {
   position:fixed;
   bottom:0;
@@ -101,80 +36,164 @@ header span {
   background:white;
   display:flex;
   justify-content:space-around;
-  align-items:center;
-  padding:10px 0;
-  border-top:1px solid #ddd;
+  padding:10px;
 }
 
-.publish {
-  background:orange;
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:30px;
-  margin-top:-30px;
-  color:white;
-}
+button { padding:5px 10px; }
 </style>
 </head>
 
 <body>
 
 <header>
-  <span>🏠</span>
-  <h1>MatchFit</h1>
-  <span>⚙️</span>
+  <h2>MatchFit</h2>
+  <button onclick="logout()">⚙️</button>
 </header>
 
-<!-- STORIES -->
-<div class="stories">
-  <div class="story">
-    <img src="https://via.placeholder.com/60">
-    <div>Vous</div>
-  </div>
-  <div class="story">
-    <img src="https://via.placeholder.com/60">
-    <div>Alex</div>
-  </div>
-  <div class="story">
-    <img src="https://via.placeholder.com/60">
-    <div>Laura</div>
-  </div>
+<!-- AUTH -->
+<div id="auth">
+  <input id="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Mot de passe"><br>
+  <button onclick="signup()">Créer compte</button>
+  <button onclick="login()">Connexion</button>
 </div>
 
-<!-- FEED -->
-<div class="feed">
+<!-- APP -->
+<div id="app" style="display:none">
 
-  <div class="post">
-    <div class="post-header">
-      <div class="user">
-        <img src="https://via.placeholder.com/40">
-        <div>
-          <strong>Sophie_74</strong><br>
-          <small>Fitness & Running</small>
-        </div>
-      </div>
-      <button>S'abonner</button>
-    </div>
+  <!-- UPLOAD -->
+  <h3>Publier</h3>
+  <input type="file" id="fileInput">
+  <button onclick="upload()">Publier</button>
 
-    <img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74">
+  <!-- PROFIL -->
+  <h3>Mon profil</h3>
+  <div id="myPosts"></div>
 
-    <div class="actions">
-      ❤️ 💬 🔗
-    </div>
-  </div>
+  <!-- FEED -->
+  <h3>Feed</h3>
+  <div id="feed"></div>
 
 </div>
 
 <!-- NAV -->
 <div class="nav">
-  <div>🔍</div>
-  <div class="publish">+</div>
-  <div>💬</div>
+  <button onclick="showFeed()">🏠</button>
+  <button onclick="showProfile()">👤</button>
 </div>
+
+<script>
+
+// 🔥 CONFIG FIREBASE (REMPLACE)
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_ID",
+  storageBucket: "YOUR_BUCKET"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+// AUTH
+function signup(){
+  auth.createUserWithEmailAndPassword(email.value, password.value);
+}
+
+function login(){
+  auth.signInWithEmailAndPassword(email.value, password.value);
+}
+
+function logout(){
+  auth.signOut();
+}
+
+// STATE
+auth.onAuthStateChanged(user=>{
+  if(user){
+    authDiv.style.display="none";
+    app.style.display="block";
+    loadFeed();
+    loadMyPosts();
+  }
+});
+
+// UPLOAD IMAGE
+function upload(){
+  const file = fileInput.files[0];
+  if(!file) return alert("Choisis une image");
+
+  const refStorage = storage.ref("posts/" + Date.now());
+
+  refStorage.put(file).then(snapshot=>{
+    snapshot.ref.getDownloadURL().then(url=>{
+      db.collection("posts").add({
+        user: auth.currentUser.uid,
+        email: auth.currentUser.email,
+        img: url,
+        createdAt: Date.now()
+      });
+    });
+  });
+}
+
+// FEED GLOBAL
+function loadFeed(){
+  db.collection("posts").orderBy("createdAt","desc")
+  .onSnapshot(snap=>{
+    feed.innerHTML = "";
+    snap.forEach(doc=>{
+      let p = doc.data();
+
+      feed.innerHTML += `
+        <div class="post">
+          <img src="${p.img}">
+          <p>${p.email}</p>
+        </div>
+      `;
+    });
+  });
+}
+
+// MES POSTS
+function loadMyPosts(){
+  db.collection("posts")
+  .where("user","==", auth.currentUser.uid)
+  .onSnapshot(snap=>{
+    myPosts.innerHTML = "";
+    snap.forEach(doc=>{
+      let p = doc.data();
+
+      myPosts.innerHTML += `
+        <div class="post">
+          <img src="${p.img}">
+          <button onclick="deletePost('${doc.id}')">Supprimer</button>
+        </div>
+      `;
+    });
+  });
+}
+
+// DELETE POST
+function deletePost(id){
+  db.collection("posts").doc(id).delete();
+}
+
+// NAV
+function showFeed(){
+  feed.style.display="block";
+  myPosts.style.display="none";
+}
+
+function showProfile(){
+  feed.style.display="none";
+  myPosts.style.display="block";
+}
+
+</script>
 
 </body>
 </html>
