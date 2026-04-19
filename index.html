@@ -8,32 +8,17 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
 
 <style>
-body {
-  margin:0;
-  font-family:Arial;
-  background:#f2f2f2;
-}
+body { margin:0; font-family:Arial; background:#f2f2f2; }
 
-/* HEADER */
-header {
-  background:#111;
-  color:white;
-  padding:15px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-/* AUTH BOX */
+/* LOGIN */
 #auth {
+  height:100vh;
   display:flex;
   flex-direction:column;
-  align-items:center;
   justify-content:center;
-  height:80vh;
+  align-items:center;
 }
 
 #auth input {
@@ -52,17 +37,18 @@ header {
 }
 
 /* APP */
-#app {
-  display:none;
+#app { display:none; }
+
+/* HEADER */
+header {
+  background:#111;
+  color:white;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
 }
 
-/* UPLOAD */
-.upload {
-  padding:10px;
-  background:white;
-}
-
-/* POSTS */
+/* POST */
 .post {
   background:white;
   margin:10px;
@@ -70,13 +56,9 @@ header {
   overflow:hidden;
 }
 
-.post img {
-  width:100%;
-}
+.post img { width:100%; }
 
-.post p {
-  padding:10px;
-}
+.post p { padding:10px; }
 
 /* NAV */
 .nav {
@@ -87,26 +69,15 @@ header {
   display:flex;
   justify-content:space-around;
   padding:10px;
-  border-top:1px solid #ddd;
-}
-
-.nav button {
-  background:none;
-  border:none;
-  font-size:20px;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-  <h2>MatchFit</h2>
-  <button onclick="logout()">⚙️</button>
-</header>
-
-<!-- AUTH -->
+<!-- LOGIN -->
 <div id="auth">
+  <h1>MatchFit</h1>
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Mot de passe">
   <button onclick="signup()">Créer compte</button>
@@ -116,38 +87,31 @@ header {
 <!-- APP -->
 <div id="app">
 
-  <div class="upload">
-    <input type="file" id="fileInput">
-    <button onclick="upload()">Publier</button>
-  </div>
+<header>
+  <h2>MatchFit</h2>
+  <button onclick="logout()">⚙️</button>
+</header>
 
-  <div id="feed"></div>
-
-  <div id="myPosts" style="display:none"></div>
+<div id="feed"></div>
 
 </div>
 
-<!-- NAV -->
 <div class="nav">
-  <button onclick="showFeed()">🏠</button>
-  <button onclick="showProfile()">👤</button>
+  <button>🏠</button>
 </div>
 
 <script>
 
-// CONFIG FIREBASE
+// 🔥 CONFIG FIREBASE
 const firebaseConfig = {
   apiKey: "YOUR_KEY",
   authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_ID",
-  storageBucket: "YOUR_BUCKET"
+  projectId: "YOUR_ID"
 };
 
 firebase.initializeApp(firebaseConfig);
-
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
 
 // AUTH
 function signup(){
@@ -168,34 +132,33 @@ auth.onAuthStateChanged(user=>{
     document.getElementById("auth").style.display="none";
     document.getElementById("app").style.display="block";
     loadFeed();
-    loadMyPosts();
+  } else {
+    document.getElementById("auth").style.display="flex";
+    document.getElementById("app").style.display="none";
   }
 });
 
-// UPLOAD
-function upload(){
-  const file = fileInput.files[0];
-  if(!file) return alert("Choisis une image");
-
-  const ref = storage.ref("posts/" + Date.now());
-
-  ref.put(file).then(snap=>{
-    snap.ref.getDownloadURL().then(url=>{
-      db.collection("posts").add({
-        user: auth.currentUser.uid,
-        email: auth.currentUser.email,
-        img: url,
-        createdAt: Date.now()
-      });
-    });
-  });
-}
-
 // FEED
 function loadFeed(){
-  db.collection("posts").orderBy("createdAt","desc")
-  .onSnapshot(snap=>{
-    feed.innerHTML="";
+  db.collection("posts").onSnapshot(snap=>{
+    
+    // 🔥 SI VIDE → FAKE POSTS
+    if(snap.empty){
+      feed.innerHTML = `
+        <div class="post">
+          <img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74">
+          <p>Sophie - Running</p>
+        </div>
+        <div class="post">
+          <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438">
+          <p>Alex - Musculation</p>
+        </div>
+      `;
+      return;
+    }
+
+    // 🔥 POSTS RÉELS
+    feed.innerHTML = "";
     snap.forEach(doc=>{
       let p = doc.data();
 
@@ -207,41 +170,6 @@ function loadFeed(){
       `;
     });
   });
-}
-
-// PROFILE
-function loadMyPosts(){
-  db.collection("posts")
-  .where("user","==", auth.currentUser.uid)
-  .onSnapshot(snap=>{
-    myPosts.innerHTML="";
-    snap.forEach(doc=>{
-      let p = doc.data();
-
-      myPosts.innerHTML += `
-        <div class="post">
-          <img src="${p.img}">
-          <button onclick="deletePost('${doc.id}')">Supprimer</button>
-        </div>
-      `;
-    });
-  });
-}
-
-// DELETE
-function deletePost(id){
-  db.collection("posts").doc(id).delete();
-}
-
-// NAV
-function showFeed(){
-  feed.style.display="block";
-  myPosts.style.display="none";
-}
-
-function showProfile(){
-  feed.style.display="none";
-  myPosts.style.display="block";
 }
 
 </script>
