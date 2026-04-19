@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MatchFit</title>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-
 <style>
-body { margin:0; font-family:Arial; background:#f2f2f2; }
+body {
+  margin:0;
+  font-family:Arial;
+  background:#f2f2f2;
+}
 
 header {
   background:#111;
@@ -18,18 +18,25 @@ header {
   padding:15px;
   display:flex;
   justify-content:space-between;
+  align-items:center;
 }
 
+h2 { margin:0; }
+
+/* POSTS & CARDS */
 .post, .card {
   background:white;
   margin:10px;
   border-radius:10px;
-  overflow:hidden;
   padding:10px;
 }
 
-img { width:100%; border-radius:10px; }
+img {
+  width:100%;
+  border-radius:10px;
+}
 
+/* NAV */
 .nav {
   position:fixed;
   bottom:0;
@@ -38,21 +45,21 @@ img { width:100%; border-radius:10px; }
   display:flex;
   justify-content:space-around;
   padding:10px;
+  border-top:1px solid #ddd;
 }
 
-#settings {
-  position:fixed;
-  top:0;
-  width:100%;
-  height:100%;
-  background:white;
+button {
+  padding:10px;
+  border:none;
+  background:#111;
+  color:white;
+  border-radius:5px;
+}
+
+/* SECTIONS */
+#discover, #messages, #profile {
   display:none;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
 }
-
-input { padding:10px; margin:5px; }
 </style>
 </head>
 
@@ -60,29 +67,29 @@ input { padding:10px; margin:5px; }
 
 <header>
   <h2>MatchFit</h2>
-  <button onclick="openSettings()">⚙️</button>
+  <span>🔥</span>
 </header>
 
 <!-- FEED -->
 <div id="feed"></div>
 
 <!-- SWIPE -->
-<div id="discover" style="display:none; text-align:center;">
+<div id="discover" style="text-align:center;">
   <div id="card" class="card"></div>
   <button onclick="likeUser()">❤️</button>
   <button onclick="skipUser()">❌</button>
 </div>
 
 <!-- MESSAGES -->
-<div id="messages" style="display:none">
+<div id="messages">
   <div id="chat"></div>
-  <input id="msg">
+  <input id="msg" placeholder="Message...">
   <button onclick="sendMsg()">Envoyer</button>
 </div>
 
 <!-- PROFILE -->
-<div id="profile" style="display:none">
-  <h3>Mon profil</h3>
+<div id="profile">
+  <h3 style="padding:10px;">Mon profil</h3>
   <div id="myPosts"></div>
 </div>
 
@@ -94,78 +101,38 @@ input { padding:10px; margin:5px; }
   <button onclick="showProfile()">👤</button>
 </div>
 
-<!-- SETTINGS -->
-<div id="settings">
-  <h2>Connexion</h2>
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Mot de passe">
-  <button onclick="signup()">Créer</button>
-  <button onclick="login()">Connexion</button>
-  <button onclick="closeSettings()">Fermer</button>
-</div>
-
 <script>
 
-// CONFIG FIREBASE
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_ID"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
-const db = firebase.firestore();
-
 // ================= FEED =================
-function loadFeed(){
-  db.collection("posts").onSnapshot(snap=>{
+feed.innerHTML = `
+<div class="post">
+  <img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74">
+  <p><b>Sophie</b> • Running 🏃‍♀️</p>
+</div>
 
-    if(snap.empty){
-      feed.innerHTML = `
-        <div class="post"><img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74"><p>Sophie - Running</p></div>
-        <div class="post"><img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438"><p>Alex - Musculation</p></div>
-      `;
-      return;
-    }
+<div class="post">
+  <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438">
+  <p><b>Alex</b> • Musculation 💪</p>
+</div>
 
-    feed.innerHTML="";
-    snap.forEach(doc=>{
-      let p = doc.data();
-      feed.innerHTML += `<div class="post"><img src="${p.img}"><p>${p.email}</p></div>`;
-    });
-  });
-}
+<div class="post">
+  <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773">
+  <p><b>Laura</b> • Yoga 🧘‍♀️</p>
+</div>
+`;
 
 // ================= SWIPE =================
-let users = [];
+let users = [
+  {name:"Sophie", sport:"Running", photo:"https://images.unsplash.com/photo-1554284126-aa88f22d8b74"},
+  {name:"Alex", sport:"Musculation", photo:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438"},
+  {name:"Laura", sport:"Yoga", photo:"https://images.unsplash.com/photo-1506126613408-eca07ce68773"}
+];
+
 let index = 0;
-
-function loadUsers(){
-  db.collection("users").get().then(snap=>{
-    users=[];
-
-    snap.forEach(doc=>{
-      if(doc.id !== auth.currentUser?.uid){
-        users.push({id:doc.id, ...doc.data()});
-      }
-    });
-
-    if(users.length === 0){
-      users = [
-        {id:"1", name:"Sophie", sport:"Running", photo:"https://images.unsplash.com/photo-1554284126-aa88f22d8b74"},
-        {id:"2", name:"Alex", sport:"Muscu", photo:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438"},
-        {id:"3", name:"Laura", sport:"Yoga", photo:"https://images.unsplash.com/photo-1506126613408-eca07ce68773"}
-      ];
-    }
-
-    showUser();
-  });
-}
 
 function showUser(){
   let u = users[index];
+
   card.innerHTML = `
     <img src="${u.photo}">
     <h2>${u.name}</h2>
@@ -174,36 +141,13 @@ function showUser(){
 }
 
 function likeUser(){
-  if(!auth.currentUser){
-    alert("Connecte-toi");
-    openSettings();
-    return;
-  }
-
-  let target = users[index];
-
-  db.collection("likes").add({
-    from: auth.currentUser.uid,
-    to: target.id
-  });
-
-  db.collection("likes")
-  .where("from","==",target.id)
-  .where("to","==",auth.currentUser.uid)
-  .get()
-  .then(snap=>{
-    if(!snap.empty){
-      alert("🔥 MATCH !");
-      db.collection("matches").add({
-        users:[auth.currentUser.uid, target.id]
-      });
-    }
-  });
-
+  alert("🔥 MATCH avec " + users[index].name);
   nextUser();
 }
 
-function skipUser(){ nextUser(); }
+function skipUser(){
+  nextUser();
+}
 
 function nextUser(){
   index++;
@@ -212,87 +156,33 @@ function nextUser(){
 }
 
 // ================= MESSAGES =================
+chat.innerHTML = `
+<p><b>Sophie :</b> Salut 👋</p>
+<p><b>Toi :</b> Salut ! Tu fais quoi comme sport ?</p>
+<p><b>Sophie :</b> Running 🏃‍♀️</p>
+`;
+
 function sendMsg(){
-  if(!auth.currentUser) return;
+  if(msg.value.trim() === "") return;
 
-  db.collection("messages").add({
-    text: msg.value,
-    user: auth.currentUser.uid
-  });
+  chat.innerHTML += `<p><b>Toi :</b> ${msg.value}</p>`;
+  msg.value = "";
 }
-
-db.collection("messages").onSnapshot(snap=>{
-
-  if(snap.empty){
-    chat.innerHTML = `
-      <p><b>Sophie :</b> Salut 👋</p>
-      <p><b>Toi :</b> Hello !</p>
-    `;
-    return;
-  }
-
-  chat.innerHTML="";
-  snap.forEach(doc=>{
-    let m = doc.data();
-    chat.innerHTML += `<p>${m.user}: ${m.text}</p>`;
-  });
-});
 
 // ================= PROFILE =================
-function loadProfile(){
+myPosts.innerHTML = `
+<div class="post">
+  <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438">
+  <p>Mon entraînement 💪</p>
+</div>
 
-  if(!auth.currentUser){
-    myPosts.innerHTML = `
-      <div class="post">
-        <img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74">
-        <p>Exemple profil</p>
-      </div>
-    `;
-    return;
-  }
+<div class="post">
+  <img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74">
+  <p>Running du matin 🏃</p>
+</div>
+`;
 
-  db.collection("posts")
-  .where("user","==",auth.currentUser.uid)
-  .onSnapshot(snap=>{
-
-    if(snap.empty){
-      myPosts.innerHTML = `
-        <div class="post">
-          <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438">
-          <p>Ton futur post</p>
-        </div>
-      `;
-      return;
-    }
-
-    myPosts.innerHTML="";
-    snap.forEach(doc=>{
-      let p = doc.data();
-      myPosts.innerHTML += `<div class="post"><img src="${p.img}"></div>`;
-    });
-  });
-}
-
-// ================= AUTH =================
-function signup(){
-  auth.createUserWithEmailAndPassword(email.value,password.value)
-  .then(res=>{
-    db.collection("users").doc(res.user.uid).set({
-      name:"Sportif",
-      sport:"Fitness"
-    });
-  });
-}
-
-function login(){
-  auth.signInWithEmailAndPassword(email.value,password.value)
-  .then(()=>closeSettings());
-}
-
-function openSettings(){ settings.style.display="flex"; }
-function closeSettings(){ settings.style.display="none"; }
-
-// ================= NAV =================
+// ================= NAVIGATION =================
 function showFeed(){
   feed.style.display="block";
   discover.style.display="none";
@@ -305,7 +195,7 @@ function showDiscover(){
   discover.style.display="block";
   messages.style.display="none";
   profile.style.display="none";
-  loadUsers();
+  showUser();
 }
 
 function showMessages(){
@@ -320,11 +210,10 @@ function showProfile(){
   discover.style.display="none";
   messages.style.display="none";
   profile.style.display="block";
-  loadProfile();
 }
 
 // INIT
-loadFeed();
+showFeed();
 
 </script>
 
