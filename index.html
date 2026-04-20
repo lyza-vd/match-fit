@@ -8,7 +8,7 @@
 <style>
 body {
   margin:0;
-  font-family:Arial;
+  font-family:-apple-system, BlinkMacSystemFont, sans-serif;
   background:#fafafa;
 }
 
@@ -17,8 +17,14 @@ header {
   background:white;
   padding:12px;
   border-bottom:1px solid #ddd;
-  text-align:center;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logo {
   font-weight:bold;
+  font-size:20px;
 }
 
 /* STORIES */
@@ -26,26 +32,29 @@ header {
   display:flex;
   overflow-x:auto;
   padding:10px;
-  gap:10px;
+  gap:12px;
+  background:white;
+  border-bottom:1px solid #ddd;
 }
 
 .story {
-  min-width:70px;
   text-align:center;
+  font-size:12px;
 }
 
 .story img {
-  width:65px;
-  height:65px;
+  width:60px;
+  height:60px;
   border-radius:50%;
-  border:2px solid #ff4d6d;
+  padding:2px;
+  background:linear-gradient(45deg,#f58529,#dd2a7b,#8134af);
   object-fit:cover;
 }
 
 /* POSTS */
 .post {
   background:white;
-  margin-bottom:10px;
+  margin-bottom:12px;
 }
 
 .post-header {
@@ -56,20 +65,30 @@ header {
 }
 
 .post-header img {
-  width:40px; /* ✅ taille réduite comme Instagram */
-  height:40px;
+  width:32px;
+  height:32px;
   border-radius:50%;
   object-fit:cover;
 }
 
 .post img {
   width:100%;
-  object-fit:cover;
 }
 
 /* ACTIONS */
 .post-actions {
   padding:10px;
+  font-size:20px;
+}
+
+.post-actions span {
+  margin-right:12px;
+  cursor:pointer;
+}
+
+.post-caption {
+  padding:0 10px 10px;
+  font-size:14px;
 }
 
 /* NAV */
@@ -82,11 +101,6 @@ header {
   justify-content:space-around;
   padding:10px;
   border-top:1px solid #ddd;
-}
-
-button {
-  background:none;
-  border:none;
   font-size:20px;
 }
 
@@ -104,38 +118,30 @@ button {
 
 <body>
 
-<header>MatchFit</header>
+<header>
+  <div class="logo">MatchFit</div>
+  <div>✉️</div>
+</header>
 
-<!-- FEED -->
 <div id="feed" class="section active"></div>
 
-<!-- DISCOVER -->
-<div id="discover" class="section" style="text-align:center;"></div>
-
-<!-- MESSAGES -->
-<div id="messages" class="section"></div>
-
-<!-- PROFILE -->
-<div id="profile" class="section"></div>
-
-<!-- NAV -->
 <div class="nav">
-  <button onclick="navigate('feed')">🏠</button>
-  <button onclick="navigate('discover')">🔥</button>
-  <button onclick="navigate('messages')">💬</button>
-  <button onclick="navigate('profile')">👤</button>
+  <div onclick="navigate('feed')">🏠</div>
+  <div onclick="navigate('discover')">🔍</div>
+  <div onclick="navigate('messages')">➕</div>
+  <div onclick="navigate('profile')">👤</div>
 </div>
 
 <script>
 
-// ================= DATA =================
+// DATA
 const users = [
-  {name:"Sophie", sport:"Running", photo:"https://images.unsplash.com/photo-1554284126-aa88f22d8b74"},
-  {name:"Alex", sport:"Musculation", photo:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438"},
-  {name:"Laura", sport:"Yoga", photo:"https://images.unsplash.com/photo-1506126613408-eca07ce68773"}
+  {name:"Sophie", sport:"Running 🏃‍♀️", photo:"https://images.unsplash.com/photo-1554284126-aa88f22d8b74"},
+  {name:"Alex", sport:"Muscu 💪", photo:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438"},
+  {name:"Laura", sport:"Yoga 🧘‍♀️", photo:"https://images.unsplash.com/photo-1506126613408-eca07ce68773"}
 ];
 
-// ================= FEED =================
+// FEED
 function renderFeed(){
   let html = `<div class="stories">`;
 
@@ -143,7 +149,7 @@ function renderFeed(){
     html += `
       <div class="story">
         <img src="${u.photo}">
-        <p>${u.name}</p>
+        <div>${u.name}</div>
       </div>
     `;
   });
@@ -157,10 +163,17 @@ function renderFeed(){
           <img src="${u.photo}">
           <b>${u.name}</b>
         </div>
+
         <img src="${u.photo}">
+
         <div class="post-actions">
-          ❤️ 💬 🔥
-          <p>${u.sport}</p>
+          <span>❤️</span>
+          <span>💬</span>
+          <span>📤</span>
+        </div>
+
+        <div class="post-caption">
+          <b>${u.name}</b> ${u.sport}
         </div>
       </div>
     `;
@@ -169,67 +182,10 @@ function renderFeed(){
   feed.innerHTML = html;
 }
 
-// ================= DISCOVER =================
-let index = 0;
-
-function renderDiscover(){
-  let u = users[index];
-
-  discover.innerHTML = `
-    <img src="${u.photo}" style="width:80%; border-radius:10px;">
-    <h2>${u.name}</h2>
-    <p>${u.sport}</p>
-    <button onclick="likeUser()">❤️</button>
-    <button onclick="nextUser()">❌</button>
-  `;
-}
-
-function likeUser(){
-  alert("🔥 MATCH avec " + users[index].name);
-  nextUser();
-}
-
-function nextUser(){
-  index = (index + 1) % users.length;
-  renderDiscover();
-}
-
-// ================= MESSAGES =================
-function renderMessages(){
-  messages.innerHTML = `
-    <p><b>Sophie :</b> Salut 👋</p>
-    <input id="msg">
-    <button onclick="sendMsg()">Envoyer</button>
-    <div id="chat"></div>
-  `;
-}
-
-function sendMsg(){
-  let input = document.getElementById("msg");
-  if(input.value.trim() === "") return;
-
-  chat.innerHTML += `<p><b>Toi :</b> ${input.value}</p>`;
-  input.value = "";
-}
-
-// ================= PROFILE =================
-function renderProfile(){
-  profile.innerHTML = `
-    <h3>Mon profil</h3>
-    <img src="${users[1].photo}" style="width:100px;border-radius:50%;object-fit:cover;">
-    <p>Sportif 💪</p>
-  `;
-}
-
-// ================= NAVIGATION =================
+// NAV
 function navigate(section){
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-  document.getElementById(section).classList.add("active");
-
-  if(section === "feed") renderFeed();
-  if(section === "discover") renderDiscover();
-  if(section === "messages") renderMessages();
-  if(section === "profile") renderProfile();
+  document.getElementById(section)?.classList.add("active");
 }
 
 // INIT
