@@ -38,17 +38,31 @@ header {
 }
 
 .story {
+  width:65px;
+  flex-shrink:0;
   text-align:center;
-  font-size:12px;
+  cursor:pointer;
 }
 
 .story img {
-  width:60px;
-  height:60px;
+  width:55px;
+  height:55px;
   border-radius:50%;
   padding:2px;
   background:linear-gradient(45deg,#f58529,#dd2a7b,#8134af);
   object-fit:cover;
+  display:block;
+  margin:0 auto;
+}
+
+.story p {
+  font-size:11px;
+  margin-top:5px;
+}
+
+/* empêche les zones de hover bizarres */
+.story * {
+  pointer-events:none;
 }
 
 /* POSTS */
@@ -60,19 +74,20 @@ header {
 .post-header {
   display:flex;
   align-items:center;
-  padding:10px;
-  gap:10px;
+  padding:8px 10px;
+  gap:8px;
 }
 
 .post-header img {
-  width:32px;
-  height:32px;
+  width:30px;        /* petit comme Insta */
+  height:30px;
   border-radius:50%;
   object-fit:cover;
 }
 
 .post img {
   width:100%;
+  object-fit:cover;
 }
 
 /* ACTIONS */
@@ -127,9 +142,9 @@ header {
 
 <div class="nav">
   <div onclick="navigate('feed')">🏠</div>
-  <div onclick="navigate('discover')">🔍</div>
-  <div onclick="navigate('messages')">➕</div>
-  <div onclick="navigate('profile')">👤</div>
+  <div>🔍</div>
+  <div>➕</div>
+  <div>👤</div>
 </div>
 
 <script>
@@ -149,7 +164,7 @@ function renderFeed(){
     html += `
       <div class="story">
         <img src="${u.photo}">
-        <div>${u.name}</div>
+        <p>${u.name}</p>
       </div>
     `;
   });
