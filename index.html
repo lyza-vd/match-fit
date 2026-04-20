@@ -43,23 +43,30 @@ header {
   object-fit:cover;
 }
 
-/* POSTS */
+/* POSTS (MODIFIÉ ICI UNIQUEMENT) */
 .post {
-  background:white;
-  margin-bottom:12px;
+  background: white;
+  max-width: 260px;   /* 👈 post plus petit */
+  margin: 0 auto 6px; /* 👈 moins d’espace entre posts */
 }
 
 .post-header {
-  display:flex;
-  align-items:center;
-  padding:8px;
-  gap:8px;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  gap: 8px;
 }
 
 .post-header img {
-  width:30px;
-  height:30px;
-  border-radius:50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.post img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
 }
 
 /* DM LIST */
@@ -136,6 +143,7 @@ header {
 /* SECTIONS */
 .section { display:none; padding-bottom:60px; }
 .active { display:block; }
+
 </style>
 </head>
 
